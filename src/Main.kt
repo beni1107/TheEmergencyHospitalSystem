@@ -170,15 +170,67 @@ class HospitalManager() {
   * Use runCatching to find the single patient with the highest urgencyLevel.
   * Hint: Use maxByOrNull { it.urgencyLevel }.
   * If the list is empty, maxByOrNull returns null. Force an error or handle the null so that getOrElse returns "No patients in triage".
-  *
-  *
   * **/
 
 
  fun getHighestUrgencyName(): String {
-     return runCatching {
-         patientList.filterIsInstance<TraumaPatient>()
-             .maxByOrNull { it.urgencyLevel }?.name
-     }.getOrElse { error -> error.message }
+     return  runCatching {
+          val Toppatient = patientList.filterIsInstance<Treatable>()
+              .maxByOrNull { patient -> patient.urgencyLevel } ?: throw NoSuchElementException("No patients in triage")
+
+          (Toppatient as Patient).name // Tolje success return string
+      }.getOrElse { error -> error.message ?: "Unknown error" }
  }
+
+    fun getHighestUrgencyName1(): String {
+        return runCatching {
+            patientList.filterIsInstance<Treatable>()
+                .map { it as Patient to it as Treatable }
+                .maxByOrNull { it.second.urgencyLevel }
+                ?: throw NoSuchElementException("No patients in triage")
+        }.map { it.first.name }
+            .getOrElse { it.message ?: "Unknow errorv" }
+    }
+
+fun getPatientTypeCounts(): Map<String, Int> {
+    return patientList.groupBy { it::class.simpleName ?: "Unknow error" }
+        .mapValues { it.value.size }
+}
+
+    /**
+     * Return a new list of patients where any Treatable patient with an
+     * urgencyLevel below 4 is marked as isStabilized = true.
+     */
+    fun treatableStabilized() : List<Treatable> {
+        return patientList.filterIsInstance<Treatable>() // Only deal with Treatable ones
+            .map { patient ->
+                if (patient.urgencyLevel < 4) {
+                    when (patient) {
+                        is TraumaPatient -> patient.copy(isStabilized = true)
+                        // If you add more Treatable types later, add them here
+                        else -> patient
+                    }
+                } else {
+                    patient
+                }
+            }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
